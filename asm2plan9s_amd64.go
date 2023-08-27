@@ -73,12 +73,15 @@ func gas(instructions []Instruction) error {
 		return err
 	}
 
-	for _, instr := range instructions {
+	lineMap := map[int]Instruction{}
+
+	for i, instr := range instructions {
 		instrFields := strings.Split(instr.instruction, "/*")
 		if len(instrFields) == 1 {
 			instrFields = strings.Split(instr.instruction, ";") // try again with ; separator
 		}
 		content := []byte(instrFields[0] + "\n")
+		lineMap[i+2] = instr
 
 		if _, err := tmpfile.Write([]byte(content)); err != nil {
 			return err
@@ -111,6 +114,18 @@ func gas(instructions []Instruction) error {
 	if err != nil {
 		asmErrs := strings.Split(string(cmb)[len(asmFile)+1:], ":")
 		asmErr := strings.Join(asmErrs[1:], ":")
+		fixer := regexp.MustCompile(`\.asm:\d+:`)
+		asmErr = fixer.ReplaceAllStringFunc(asmErr, func(s string) string {
+			parts := strings.Split(s, ":")
+			lno, err := strconv.Atoi(parts[1])
+			if err == nil {
+				fmt.Printf("%d -> %d: %s\n", lno, lineMap[lno].lineno+1, lineMap[lno].instruction)
+				parts[1] = strconv.Itoa(lineMap[lno].lineno + 1)
+			} else {
+				parts[1] += "?"
+			}
+			return strings.Join(parts, ":")
+		})
 		// TODO: Fix proper error reporting
 		lineno := -1
 		instr := "TODO: fix"
