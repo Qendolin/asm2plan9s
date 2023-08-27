@@ -119,7 +119,6 @@ func gas(instructions []Instruction) error {
 			parts := strings.Split(s, ":")
 			lno, err := strconv.Atoi(parts[1])
 			if err == nil {
-				fmt.Printf("%d -> %d: %s\n", lno, lineMap[lno].lineno+1, lineMap[lno].instruction)
 				parts[1] = strconv.Itoa(lineMap[lno].lineno + 1)
 			} else {
 				parts[1] += "?"
